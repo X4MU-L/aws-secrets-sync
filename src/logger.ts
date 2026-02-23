@@ -1,6 +1,15 @@
 /**
  * Cross-platform colored logging utility
  * Uses ANSI color codes for colorization (works on macOS, Linux, Windows with proper terminal)
+ *
+ * Verbosity model
+ * ───────────────
+ * success / warn / error  → always shown (unless silent). These are the only
+ *                            signals a library consumer needs to see.
+ * info / log              → verbose mode only. The CLI enables verbose so the
+ *                            user gets progress feedback; programmatic / library
+ *                            use stays quiet.
+ * debugLog                → debug mode only (--debug flag).
  */
 
 export enum Color {
@@ -16,6 +25,8 @@ export enum Color {
 interface LoggerConfig {
 	debug?: boolean;
 	silent?: boolean;
+	/** Enable info() and log(). Off by default so library use stays quiet. */
+	verbose?: boolean;
 }
 
 class Logger {
@@ -23,9 +34,12 @@ class Logger {
 
 	private silent: boolean;
 
+	private verbose: boolean;
+
 	constructor(config: LoggerConfig = {}) {
-		this.debug = config.debug || false;
-		this.silent = config.silent || false;
+		this.debug = config.debug ?? false;
+		this.silent = config.silent ?? false;
+		this.verbose = config.verbose ?? false;
 	}
 
 	/**
@@ -33,7 +47,7 @@ class Logger {
 	 */
 	success(message: string): void {
 		if (this.silent) return;
-		console.log(`${Color.Green}✓${Color.Reset} ${message}`);
+		console.log(`${Color.Green}✓ ${message}${Color.Reset} `);
 	}
 
 	/**
@@ -41,7 +55,7 @@ class Logger {
 	 */
 	error(message: string, err?: Error): void {
 		if (this.silent) return;
-		console.error(`${Color.Red}✗${Color.Reset} ${message}`);
+		console.error(`${Color.Red}✗ ${message}${Color.Reset}`);
 		if (err && this.debug) {
 			console.error(`${Color.Gray}${err.stack}${Color.Reset}`);
 		}
@@ -52,22 +66,22 @@ class Logger {
 	 */
 	warn(message: string): void {
 		if (this.silent) return;
-		console.warn(`${Color.Yellow}⚠${Color.Reset} ${message}`);
+		console.warn(`${Color.Yellow}⚠ ${message}${Color.Reset}`);
 	}
 
 	/**
 	 * Log info message in blue
 	 */
 	info(message: string): void {
-		if (this.silent) return;
-		console.log(`${Color.Blue}ℹ${Color.Reset} ${message}`);
+		if (this.silent || !this.verbose) return;
+		console.log(`${Color.Blue}ℹ ${message}${Color.Reset}`);
 	}
 
 	/**
 	 * Log debug message in gray (only if debug enabled)
 	 */
 	debugLog(message: string, data?: unknown): void {
-		if (!this.debug || this.silent) return;
+		if (!this.debug || this.silent || !this.verbose) return;
 		if (data) {
 			console.log(
 				`${Color.Gray}[DEBUG] ${message}${Color.Reset}`,
@@ -79,40 +93,43 @@ class Logger {
 	}
 
 	/**
-	 * Log raw message without formatting
+	 * Verbose only: raw message without formatting.
+	 * Suppressed in library/programmatic use; enabled by the CLI.
 	 */
 	log(message: string): void {
 		if (this.silent) return;
-		console.log(message);
+		console.log(`${Color.Cyan}${message}${Color.Reset}`);
 	}
 
-	/**
-	 * Set debug mode
-	 */
-	setDebug(debug: boolean): void {
-		this.debug = debug;
+	/** Enable/disable debug output (--debug flag) */
+	setDebug(enabled: boolean): void {
+		this.debug = enabled;
 	}
 
-	/**
-	 * Set silent mode
-	 */
-	setSilent(silent: boolean): void {
-		this.silent = silent;
+	/** Enable/disable verbose output (info + log). Called by the CLI on startup. */
+	setVerbose(enabled: boolean): void {
+		this.verbose = enabled;
+	}
+
+	/** Suppress all output */
+	setSilent(enabled: boolean): void {
+		this.silent = enabled;
 	}
 }
 
-// Export singleton instance
+// Singleton: verbose off by default (library-safe).
+// The CLI calls logger.setVerbose(true) before doing anything else.
 export const logger = new Logger();
 
 /**
- * Create new logger instance with custom config
+ * Create a new logger instance with custom config.
  */
 export function createLogger(config: LoggerConfig): Logger {
 	return new Logger(config);
 }
 
 /**
- * Wrap async operations with error handling and logging
+ * Wrap async operations with error handling and logging.
  */
 export async function withLogging<T>(
 	operation: () => Promise<T>,
@@ -127,11 +144,7 @@ export async function withLogging<T>(
 		return result;
 	} catch (error) {
 		const err = error instanceof Error ? error : new Error(String(error));
-		if (errorMessage) {
-			logger.error(errorMessage, err);
-		} else {
-			logger.error(err.message, err);
-		}
+		logger.error(errorMessage ?? err.message, err);
 		throw err;
 	}
 }

@@ -4,7 +4,7 @@ import fs from 'fs';
 
 import secretsManagerFunctionFactory from './secrets-manager';
 import { logger } from './logger';
-import { CLIFlags, ParsedCLI, MergeStrategy } from './types';
+import { MergeStrategy } from './types';
 import { configureInteractive } from './configure';
 import { initializeConfig, requireConfig } from './initialize';
 import {
@@ -17,36 +17,8 @@ import {
 	isCiEnvironment,
 	loadFromEnvFile,
 	checkUnsetSecrets,
+	parseCliArgs,
 } from './utils';
-
-/**
- * Parse command-line arguments and flags
- */
-function parseCliArgs(args: string[]): ParsedCLI {
-	const command = args[0];
-	const restArgs = args.slice(1);
-
-	const flags: CLIFlags = {};
-	const positionalArgs: string[] = [];
-
-	restArgs.forEach((arg) => {
-		if (arg.startsWith('--')) {
-			const [key, value] = arg.slice(2).split('=');
-			flags[key] = value === undefined ? true : value;
-		} else if (arg.startsWith('-')) {
-			const key = arg.slice(1);
-			flags[key] = true;
-		} else {
-			positionalArgs.push(arg);
-		}
-	});
-
-	return {
-		command,
-		args: positionalArgs,
-		flags,
-	};
-}
 
 /**
  * Main CLI handler
@@ -55,9 +27,9 @@ export async function cli(args: string[]): Promise<void> {
 	const parsed = parseCliArgs(args.slice(2));
 	const { command, flags } = parsed;
 
-	// Enable debug logging if requested
-	if (flags.debug) {
-		logger.setDebug(true);
+	// CLI mode: always enable verbose so info/log messages are shown
+	if (flags.debug || flags.verbose || flags.ci) {
+		logger.setVerbose(true);
 	}
 
 	// Help command
@@ -88,10 +60,17 @@ export async function cli(args: string[]): Promise<void> {
 				});
 
 				// Resolve configuration (null if CI mode without config)
-				const context =
-					ci && !flags.interactive
-						? null
-						: await requireConfig(process.cwd(), flags);
+				let context;
+				try {
+					context = await requireConfig(process.cwd(), flags);
+				} catch {
+					if (!ci || flags.interactive) {
+						throw new Error(
+							'Failed to load configuration. Please run "aws-sync-dotenv configure" first.',
+						);
+					}
+					context = null;
+				}
 
 				// Resolve AWS credentials
 				const credentials = resolveCredentials(context, ci);
@@ -130,9 +109,17 @@ export async function cli(args: string[]): Promise<void> {
 				}
 
 				const secretString = await loadFromEnvFile(undefined, 'secrets', flags);
+
 				const config = {
-					Name: context?.config?.Name || process.env.AWS_SECRET_NAME || 'app',
-					Description: context?.config?.Description || 'Application secrets',
+					Name:
+						context?.secretsRc?.Name ||
+						context?.config?.Name ||
+						process.env.AWS_SECRET_NAME ||
+						'app',
+					Description:
+						context?.secretsRc?.Description ||
+						context?.config?.Description ||
+						'Application secrets',
 					SecretString: secretString,
 				};
 
@@ -168,8 +155,15 @@ export async function cli(args: string[]): Promise<void> {
 				const secretsManager = createSecretsManagerClient(credentials);
 
 				const config = {
-					Name: context?.config?.Name || process.env.AWS_SECRET_NAME || 'app',
-					Description: context?.config?.Description || 'Application secrets',
+					Name:
+						context?.secretsRc?.Name ||
+						context?.config?.Name ||
+						process.env.AWS_SECRET_NAME ||
+						'app',
+					Description:
+						context?.secretsRc?.Description ||
+						context?.config?.Description ||
+						'Application secrets',
 					SecretString: '', // Not used for fetch operations
 				};
 
@@ -223,6 +217,13 @@ function createAwsSecretManager(
 			stage?: string,
 			mergeStrategy?: MergeStrategy,
 		) => {
+			const context = await requireConfig(process.cwd(), { ci: true });
+			config.Name =
+				context?.secretsRc?.Name || context?.config?.Name || secretName;
+			config.Description =
+				context?.secretsRc?.Description ||
+				context?.config?.Description ||
+				description;
 			config.SecretString = await loadFromEnvFile(undefined, secretName, {
 				ci: true,
 			});

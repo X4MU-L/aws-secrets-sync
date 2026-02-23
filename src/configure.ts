@@ -21,7 +21,7 @@ export async function configureInteractive(
 	startPath: string = process.cwd(),
 ): Promise<void> {
 	try {
-		logger.info('AWS Sync DotEnv Configuration Setup');
+		logger.log('AWS Sync DotEnv Configuration Setup');
 		logger.log('');
 
 		// Determine project root
@@ -29,9 +29,8 @@ export async function configureInteractive(
 		const isGit = isGitRepository(projectRoot.path);
 		const defaultProjectName = generateProjectName(projectRoot.path);
 
-		logger.info(`Project Root: ${projectRoot}`);
+		logger.info(`Project Root: ${projectRoot.path}`);
 		logger.info(`Git Repository: ${isGit ? 'Yes' : 'No'}`);
-		logger.log('');
 
 		// Collect AWS configuration
 		logger.info('AWS Configuration');
@@ -48,7 +47,7 @@ export async function configureInteractive(
 		const region = await prompt('AWS Region', 'us-east-1');
 
 		logger.log('');
-		logger.info('Choose authentication method:');
+		logger.log('Choose authentication method:');
 		logger.log('  1. AWS Profile (recommended - uses ~/.aws/credentials)');
 		logger.log('  2. Explicit credentials (store access keys in .aws-config)');
 		logger.log('  3. Environment variables only (no config storage)');
@@ -73,7 +72,7 @@ export async function configureInteractive(
 			}
 		} else if (authMethod === '2') {
 			// Explicit credentials
-			logger.warn('⚠️  Credentials will be stored in .aws-config');
+			logger.warn('Credentials will be stored in .aws-config');
 			logger.warn('Make sure .aws-config is in .gitignore!');
 			logger.log('');
 
@@ -146,7 +145,12 @@ export async function configureInteractive(
 
 		// Write config files
 		logger.info('Writing configuration files...');
-		await writeConfigToFile(projectRoot.path, awsConfig, orgConfig, secretsRc);
+		const rcFileCreated = await writeConfigToFile(
+			projectRoot.path,
+			awsConfig,
+			orgConfig,
+			secretsRc,
+		);
 
 		// Update gitignore if git repo
 		if (isGit) {
@@ -154,26 +158,20 @@ export async function configureInteractive(
 			await updateGitignore(projectRoot.path);
 		}
 
-		logger.log('');
-		logger.success('Configuration setup complete!');
-		logger.log('');
-		logger.info('Files created:');
+		logger.log('Files created:');
 		logger.log('  • .aws-config - AWS credentials and region');
 		if (addOrgConfig) {
 			logger.log('  • .aws-org-config.json - Organization settings');
 		}
-		logger.log('  • .secretsrc - Secrets registry');
-		logger.log('');
+		if (rcFileCreated) {
+			logger.log('  • .secretsrc - Secrets registry');
+		}
 
 		if (isGit) {
 			logger.info('Also added .aws-config to .gitignore');
 		}
-
 		logger.log('');
-		logger.info('Next steps:');
-		logger.log(`  1. Update .aws-config with your AWS credentials`);
-		logger.log(`  2. Run: npm run create-or-update-secret [stage]`);
-		logger.log('');
+		logger.success('Configuration setup complete!');
 	} catch (error) {
 		const err = error instanceof Error ? error : new Error(String(error));
 		logger.error('Configuration setup failed:', err);
@@ -189,14 +187,15 @@ export async function configureNonInteractive(
 	awsConfig: AwsConfig,
 	orgConfig?: AwsOrgConfig,
 	secretsRc?: SecretsRcConfig,
+	ci?: boolean,
 ): Promise<void> {
 	try {
 		logger.info('Writing configuration files...');
 		await writeConfigToFile(projectRoot, awsConfig, orgConfig, secretsRc);
 
-		if (isGitRepository(projectRoot)) {
+		if (isGitRepository(projectRoot) && !ci) {
 			logger.info('Updating .gitignore...');
-			await updateGitignore(projectRoot);
+			await updateGitignore(projectRoot, ci);
 		}
 
 		logger.success('Configuration written successfully!');

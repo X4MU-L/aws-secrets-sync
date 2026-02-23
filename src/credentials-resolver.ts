@@ -179,10 +179,8 @@ export async function validateCredentials(
 		};
 	} catch (error) {
 		const err = error instanceof Error ? error : new Error(String(error));
-		logger.error('Failed to validate AWS credentials:', err);
-		throw new Error(
-			'Invalid AWS credentials. Please check your configuration or environment variables.',
-		);
+		logger.error(`Failed to validate AWS credentials: ${err.message}`, err);
+		throw err;
 	}
 }
 

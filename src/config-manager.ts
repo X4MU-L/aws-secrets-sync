@@ -4,6 +4,7 @@
  */
 
 import * as fs from 'fs/promises';
+import rc from 'rc';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import {
@@ -13,6 +14,7 @@ import {
 	ConfigContext,
 } from './types';
 import { logger } from './logger';
+import { isCiEnvironment } from './utils';
 
 /**
  * Get the project root directory
@@ -149,9 +151,9 @@ export async function writeConfigToFile(
 	awsConfig: AwsConfig,
 	orgConfig?: AwsOrgConfig,
 	secretsRc?: SecretsRcConfig,
-): Promise<void> {
+): Promise<boolean> {
 	const timestamp = new Date().toISOString();
-
+	let rcFileCreated = false;
 	try {
 		// Write .aws-config
 		const configPath = path.join(projectRoot, '.aws-config');
@@ -183,16 +185,23 @@ export async function writeConfigToFile(
 		// Write .secretsrc
 		if (secretsRc) {
 			const secretsRcPath = path.join(projectRoot, '.secretsrc');
+			const config = rc('secrets');
+
 			const secretsRcWithTimestamp = {
 				...secretsRc,
 				CreatedAt: secretsRc.CreatedAt || timestamp,
 			};
-			await fs.writeFile(
-				secretsRcPath,
-				JSON.stringify(secretsRcWithTimestamp, null, 2),
-			);
-			logger.debugLog('Wrote secrets rc to:', secretsRcPath);
+
+			if (typeof config?.LIST_OF_SECRETS !== 'object') {
+				await fs.writeFile(
+					secretsRcPath,
+					JSON.stringify(secretsRcWithTimestamp, null, 2),
+				);
+				rcFileCreated = true;
+				logger.debugLog('Wrote secrets rc to:', secretsRcPath);
+			}
 		}
+		return rcFileCreated;
 	} catch (error) {
 		const err = error instanceof Error ? error : new Error(String(error));
 		logger.error('Failed to write config files:', err);
@@ -203,9 +212,16 @@ export async function writeConfigToFile(
 /**
  * Update .gitignore to include .aws-config
  */
-export async function updateGitignore(projectRoot: string): Promise<void> {
+export async function updateGitignore(
+	projectRoot: string,
+	ci: boolean = false,
+): Promise<void> {
 	if (!isGitRepository(projectRoot)) {
 		logger.debugLog('Not a git repo, skipping .gitignore update');
+		return;
+	}
+	if (ci || isCiEnvironment()) {
+		logger.debugLog('CI environment, skipping .gitignore update');
 		return;
 	}
 

@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import rc from 'rc';
-import { logger } from './logger';
-import type { SecretsRcConfig } from './types';
+import { logger, Color } from './logger';
+import type { SecretsRcConfig, CLIFlags, ParsedCLI } from './types';
 
 /**
  * Prompt user for input
@@ -19,8 +19,8 @@ export async function prompt(
 
 	return new Promise((resolve) => {
 		const ques = defaultValue
-			? `${question} [${defaultValue}]: `
-			: `${question}: `;
+			? `${Color.Cyan}${question} [${defaultValue}]:${Color.Reset} `
+			: `${Color.Cyan}${question}:${Color.Reset} `;
 
 		rl.question(ques, (answer: string) => {
 			rl.close();
@@ -55,15 +55,24 @@ export function isNpmScript(): boolean {
 /**
  * Get environment variables as config payload
  */
-export function getEnvConfig(secretName: string): string {
+export function getEnvConfig(secretName: string, ci: boolean = false): string {
 	const config = rc(secretName);
+	if (typeof config?.LIST_OF_SECRETS !== 'object' || config === null) {
+		throw new Error(
+			`Invalid configuration for create .${secretName}rc in root folder
 
+       visit https://github.com/x4mu-l/aws-secrets-sync#readme for setup instructions
+      `,
+		);
+	}
 	const secretValues = config.LIST_OF_SECRETS.reduce(
 		(acc: Record<string, string>, key: string) => {
 			if (process.env[key] !== undefined) {
 				acc[key] = process.env[key]!;
 			} else {
-				logger.warn(`Environment variable ${key} not found`);
+				const isNpm = isNpmScript();
+				const logFn = isNpm || ci ? logger.warn : logger.info;
+				logFn.call(logger, `Environment variable ${key} not found`);
 			}
 			return acc;
 		},
@@ -107,19 +116,20 @@ export async function loadFromEnvFile(
 	acceptDefaults: boolean = true,
 ): Promise<string> {
 	const config = rc(secretName);
-	if (typeof config !== 'object' || config === null) {
+	if (typeof config?.LIST_OF_SECRETS !== 'object' || config === null) {
 		throw new Error(
-			`Invalid configuration for create .${secretName}rc in root folder\n
-       visit https://github.com/x4mu-l/aws-sync-dotenv#readme for setup instructions
+			`Invalid configuration for create .${secretName}rc in root folder
+
+       visit https://github.com/x4mu-l/aws-secrets-sync#readme for setup instructions
       `,
 		);
 	}
 	const ignoreKeys: string[] = (config.IGNORE_KEYS as string[]) || [];
 	const existingSecrets: string[] = (config.LIST_OF_SECRETS as string[]) || [];
 	const isNpm = isNpmScript();
-
-	if (isCiEnvironment(flags)) {
-		return getEnvConfig(secretName);
+	const isCi = isCiEnvironment(flags);
+	if (isCi) {
+		return getEnvConfig(secretName, isCi);
 	}
 
 	if (!isNpm && !acceptDefaults) {
@@ -134,7 +144,7 @@ export async function loadFromEnvFile(
 	try {
 		content = fs.readFileSync(filePath, 'utf-8');
 	} catch {
-		logger.warn(`Could not read .env file at ${filePath}`);
+		logger.debugLog(`Could not read .env file at ${filePath}`);
 		return getEnvConfig(secretName);
 	}
 
@@ -248,15 +258,19 @@ export async function checkUnsetSecrets(
 
 	if (unsetKeys.length === 0) return true;
 
-	logger.warn(
-		'\nThe following secrets from .secretsrc are not set in your environment:',
+	const isNpm = isNpmScript();
+	const logFn = logger.warn;
+	logFn.call(
+		logger,
+		`The following keys from .${secretName}rc are not set in the environment:`,
 	);
-	unsetKeys.forEach((key) => logger.warn(`   - ${key}`));
+	unsetKeys.forEach((key) => {
+		logFn.call(logger, `   - ${key}`);
+	});
 
-	const shouldContinue = await promptYesNo(
-		'\nDo you want to continue anyway?',
-		false,
-	);
+	const shouldContinue = isNpm
+		? true
+		: await promptYesNo('\nDo you want to continue anyway?', false);
 
 	if (!shouldContinue) {
 		logger.error('❌ Operation cancelled.');
@@ -264,6 +278,58 @@ export async function checkUnsetSecrets(
 	}
 
 	return true;
+}
+
+/**
+ * Parse command-line arguments and flags.
+ * Supports both --key=value and --key value forms.
+ * Boolean flags: --flag (no following value or next arg starts with -)
+ */
+export function parseCliArgs(args: string[]): ParsedCLI {
+	interface ParseState {
+		flags: CLIFlags;
+		positional: string[];
+		skip: boolean;
+	}
+
+	const state = args.reduce<ParseState>(
+		(acc, arg, i) => {
+			// This arg was already consumed as the value of the previous flag
+			if (acc.skip) return { ...acc, skip: false };
+
+			if (arg.startsWith('--')) {
+				const eqIdx = arg.indexOf('=');
+				if (eqIdx !== -1) {
+					// --key=value
+					const key = arg.slice(2, eqIdx);
+					const val = arg.slice(eqIdx + 1);
+					return { ...acc, flags: { ...acc.flags, [key]: val } };
+				}
+				const key = arg.slice(2);
+				const next = args[i + 1];
+				if (next !== undefined && !next.startsWith('-')) {
+					// --key value  (consume next token as value)
+					return { ...acc, flags: { ...acc.flags, [key]: next }, skip: true };
+				}
+				// --flag  (boolean)
+				return { ...acc, flags: { ...acc.flags, [key]: true } };
+			}
+
+			if (arg.startsWith('-')) {
+				// -f  (short boolean flag)
+				return { ...acc, flags: { ...acc.flags, [arg.slice(1)]: true } };
+			}
+
+			return { ...acc, positional: [...acc.positional, arg] };
+		},
+		{ flags: {}, positional: [], skip: false },
+	);
+
+	return {
+		command: state.positional[0],
+		args: state.positional.slice(1),
+		flags: state.flags,
+	};
 }
 
 /**
@@ -314,4 +380,5 @@ export default {
 	showHelp,
 	getEnvConfig,
 	checkUnsetSecrets,
+	parseCliArgs,
 };
