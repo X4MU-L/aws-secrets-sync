@@ -71,6 +71,33 @@ export function getEnvConfig(secretName: string): string {
 }
 
 /**
+ * Detect if running in CI environment
+ */
+export function isCiEnvironment(flags?: { ci?: boolean }): boolean {
+	if (flags?.ci === true) {
+		return true;
+	}
+
+	// Check environment variables
+	const ciEnvVars = [
+		'CI',
+		'CONTINUOUS_INTEGRATION',
+		'GITHUB_ACTIONS',
+		'GITLAB_CI',
+		'BITBUCKET_PIPELINES',
+		'CIRCLECI',
+		'TRAVIS',
+		'JENKINS_URL',
+		'BUILDKITE',
+		'DRONE',
+	];
+
+	return ciEnvVars.some(
+		(envVar) => process.env[envVar] === 'true' || process.env[envVar] === 'yes',
+	);
+}
+
+/**
  * Show help message
  */
 export function showHelp(): void {

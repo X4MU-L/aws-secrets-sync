@@ -101,13 +101,13 @@ export interface ConfigContext {
 export interface SecretManagerFunctionFactory {
 	createOrUpdateSecret: (
 		stage?: string,
-		mergeStrategy?: MergeStrategy
+		mergeStrategy?: MergeStrategy,
 	) => Promise<void>;
 	createLocalEnvironment: (stage?: string) => Promise<void>;
 	getSecretValues?: (secretId: string) => Promise<SecretValues>;
 	mergeSecretValues?: (
 		existing: SecretValues,
 		incoming: SecretValues,
-		strategy?: MergeStrategy
+		strategy?: MergeStrategy,
 	) => SecretValues;
 }
