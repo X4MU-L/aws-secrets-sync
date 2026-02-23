@@ -1,14 +1,49 @@
-.gitattributes
-.github
-src
+# Source files
+src/
+
+# Tests
+**/*.test.ts
+**/*.spec.ts
+
+# Configuration
 tsconfig.json
-typings
-.idea
-wallaby.js
-.secretsrc
-.eslintrc.cjs
-.env
-.eslintignore
-.prettierrc
-build.ts
+eslint.config.mjs
+prettier.config.mjs
 jest.json
+.prettierrc
+.eslintignore
+build.ts
+
+# Development
+node_modules/
+.git/
+.gitignore
+.env
+.env.local
+.env.*.local
+
+# Build artifacts (keep only dist)
+*.tsbuildinfo
+src/**/*.d.ts
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+.travis.yml
+
+# Documentation
+CONTRIBUTING.md
+force_build.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.editorconfig
+
+# Misc
+.gitattributes
