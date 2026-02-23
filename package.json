@@ -26,12 +26,12 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/supersoniko/aws-secret-sync.git"
+		"url": "git+https://github.com/x4mu-l/aws-secrets-sync.git"
 	},
 	"bugs": {
-		"url": "https://github.com/supersoniko/aws-secret-sync/issues"
+		"url": "https://github.com/x4mu-l/aws-secrets-sync/issues"
 	},
-	"homepage": "https://github.com/supersoniko/aws-secret-sync#readme",
+	"homepage": "https://github.com/x4mu-l/aws-secrets-sync#readme",
 	"files": [
 		".dist",
 		"bin",

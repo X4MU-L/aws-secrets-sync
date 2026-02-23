@@ -203,13 +203,13 @@ Contributions welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## Credits
 
-`aws-secret-sync` is an evolution of [`aws-secrets-dotenv`](https://github.com/supersoniko/aws-secrets-dotenv), the original tool created by [Chukwuebuka Okoli](https://github.com/supersoniko).
+`aws-secret-sync` is an evolution of [`aws-secrets-dotenv`](https://github.com/supersoniko/aws-secrets-dotenv), the original tool created by [supersoniko](https://github.com/supersoniko).
 
 The core concept and architecture originate from that project. This package builds upon it with a new name, improved TypeScript types, CI/CD tooling, and multi-package-manager support.
 
 ## License
 
-MIT © [Chukwuebuka Okoli](https://github.com/supersoniko)
+MIT © [Chukwuebuka Okoli](https://github.com/x4mu-l)
 
 ---
 
