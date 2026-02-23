@@ -1,6 +1,4 @@
-import {
-	validateAwsConfig,
-} from '../config-manager';
+import { validateAwsConfig } from '../config-manager';
 import { AwsConfig } from '../types';
 
 describe('config-manager file validation', () => {

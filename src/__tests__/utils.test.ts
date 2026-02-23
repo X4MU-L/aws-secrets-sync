@@ -26,9 +26,11 @@ describe('utils', () => {
 
 	describe('prompt', () => {
 		it('should prompt user and return answer', async () => {
-			mockQuestion.mockImplementation((q: string, callback: (answer: string) => void) => {
-				callback('user-input');
-			});
+			mockQuestion.mockImplementation(
+				(q: string, callback: (answer: string) => void) => {
+					callback('user-input');
+				},
+			);
 
 			const answer = await prompt('What is your name?');
 
@@ -36,9 +38,11 @@ describe('utils', () => {
 		});
 
 		it('should use default value if no answer provided', async () => {
-			mockQuestion.mockImplementation((q: string, callback: (answer: string) => void) => {
-				callback('');
-			});
+			mockQuestion.mockImplementation(
+				(q: string, callback: (answer: string) => void) => {
+					callback('');
+				},
+			);
 
 			const answer = await prompt('Enter value', 'default-value');
 
@@ -50,14 +54,16 @@ describe('utils', () => {
 
 			expect(mockQuestion).toHaveBeenCalledWith(
 				expect.stringContaining('my-default'),
-				expect.any(Function)
+				expect.any(Function),
 			);
 		});
 
 		it('should handle empty string as answer', async () => {
-			mockQuestion.mockImplementation((q: string, callback: (answer: string) => void) => {
-				callback('some-value');
-			});
+			mockQuestion.mockImplementation(
+				(q: string, callback: (answer: string) => void) => {
+					callback('some-value');
+				},
+			);
 
 			const answer = await prompt('Enter something');
 
@@ -67,9 +73,11 @@ describe('utils', () => {
 
 	describe('promptYesNo', () => {
 		it('should return true for yes answer', async () => {
-			mockQuestion.mockImplementation((q: string, callback: (answer: string) => void) => {
-				callback('y');
-			});
+			mockQuestion.mockImplementation(
+				(q: string, callback: (answer: string) => void) => {
+					callback('y');
+				},
+			);
 
 			const result = await promptYesNo('Continue?', true);
 
@@ -77,9 +85,11 @@ describe('utils', () => {
 		});
 
 		it('should return false for no answer', async () => {
-			mockQuestion.mockImplementation((q: string, callback: (answer: string) => void) => {
-				callback('n');
-			});
+			mockQuestion.mockImplementation(
+				(q: string, callback: (answer: string) => void) => {
+					callback('n');
+				},
+			);
 
 			const result = await promptYesNo('Continue?', true);
 
@@ -87,9 +97,11 @@ describe('utils', () => {
 		});
 
 		it('should use default when no answer provided', async () => {
-			mockQuestion.mockImplementation((q: string, callback: (answer: string) => void) => {
-				callback('');
-			});
+			mockQuestion.mockImplementation(
+				(q: string, callback: (answer: string) => void) => {
+					callback('');
+				},
+			);
 
 			const result = await promptYesNo('Continue?', true);
 
@@ -101,7 +113,7 @@ describe('utils', () => {
 
 			expect(mockQuestion).toHaveBeenCalledWith(
 				expect.stringContaining('[Y/n]'),
-				expect.any(Function)
+				expect.any(Function),
 			);
 		});
 
@@ -110,7 +122,7 @@ describe('utils', () => {
 
 			expect(mockQuestion).toHaveBeenCalledWith(
 				expect.stringContaining('[y/N]'),
-				expect.any(Function)
+				expect.any(Function),
 			);
 		});
 	});
@@ -130,9 +142,7 @@ describe('utils', () => {
 			showHelp();
 
 			expect(consoleSpy).toHaveBeenCalled();
-			const output = consoleSpy.mock.calls
-				.map((call) => call[0])
-				.join('\n');
+			const output = consoleSpy.mock.calls.map((call) => call[0]).join('\n');
 
 			expect(output).toMatch(/USAGE|COMMANDS/i);
 		});
@@ -140,9 +150,7 @@ describe('utils', () => {
 		it('should describe all available commands', () => {
 			showHelp();
 
-			const output = consoleSpy.mock.calls
-				.map((call) => call[0])
-				.join('\n');
+			const output = consoleSpy.mock.calls.map((call) => call[0]).join('\n');
 
 			expect(output).toMatch(/configure|secrets|env/i);
 		});

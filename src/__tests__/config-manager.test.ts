@@ -8,7 +8,6 @@ import {
 } from '../config-manager';
 import { AwsConfig } from '../types';
 
-
 // Mock child_process for git commands
 jest.mock('child_process', () => ({
 	execSync: jest.fn(),
@@ -30,7 +29,7 @@ describe('config-manager', () => {
 			expect(result).toEqual({ isGit: true, path: '/path/to/git/root' });
 			expect(mockExecSync).toHaveBeenCalledWith(
 				'git rev-parse --show-toplevel',
-				expect.any(Object)
+				expect.any(Object),
 			);
 		});
 
@@ -47,9 +46,7 @@ describe('config-manager', () => {
 
 	describe('getRepoRemoteName', () => {
 		it('should extract repo name from HTTPS URL', () => {
-			mockExecSync.mockReturnValue(
-				'https://github.com/owner/repo-name.git\n'
-			);
+			mockExecSync.mockReturnValue('https://github.com/owner/repo-name.git\n');
 
 			const result = getRepoRemoteName('/project');
 
@@ -57,9 +54,7 @@ describe('config-manager', () => {
 		});
 
 		it('should extract repo name from SSH URL', () => {
-			mockExecSync.mockReturnValue(
-				'git@github.com:owner/repo-name.git\n'
-			);
+			mockExecSync.mockReturnValue('git@github.com:owner/repo-name.git\n');
 
 			const result = getRepoRemoteName('/project');
 
@@ -67,9 +62,7 @@ describe('config-manager', () => {
 		});
 
 		it('should handle repo name without .git extension', () => {
-			mockExecSync.mockReturnValue(
-				'https://github.com/owner/my-repo\n'
-			);
+			mockExecSync.mockReturnValue('https://github.com/owner/my-repo\n');
 
 			const result = getRepoRemoteName('/project');
 
@@ -110,7 +103,7 @@ describe('config-manager', () => {
 	describe('generateProjectName', () => {
 		it('should use git remote name if available', () => {
 			mockExecSync.mockReturnValue(
-				Buffer.from('https://github.com/owner/my-project.git\n')
+				Buffer.from('https://github.com/owner/my-project.git\n'),
 			);
 
 			const result = generateProjectName('/path/to/my-project');

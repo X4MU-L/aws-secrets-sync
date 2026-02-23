@@ -1,4 +1,7 @@
-import { resolveCredentials, createSecretsManagerClient } from '../credentials-resolver';
+import {
+	resolveCredentials,
+	createSecretsManagerClient,
+} from '../credentials-resolver';
 import { ConfigContext, AwsConfig } from '../types';
 
 describe('credentials-resolver', () => {
@@ -57,7 +60,7 @@ describe('credentials-resolver', () => {
 				delete process.env.AWS_SECRET_ACCESS_KEY;
 
 				expect(() => resolveCredentials(null, true)).toThrow(
-					'CI mode requires AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY'
+					'CI mode requires AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY',
 				);
 			});
 		});

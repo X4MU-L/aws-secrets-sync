@@ -1,4 +1,4 @@
-import {getEnvConfig} from '../utils'
+import { getEnvConfig } from '../utils';
 
 describe('getConfig', (): void => {
 	it('should support .secretsrc and parses it correctly', (): void => {

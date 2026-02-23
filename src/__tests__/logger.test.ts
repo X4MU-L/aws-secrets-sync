@@ -107,7 +107,7 @@ describe('Logger', () => {
 			const result = await withLogging(
 				async () => 'success',
 				'Operation',
-				'Completed'
+				'Completed',
 			);
 
 			expect(result).toBe('success');
