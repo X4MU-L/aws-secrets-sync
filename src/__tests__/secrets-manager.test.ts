@@ -124,34 +124,35 @@ describe('SecretsManagerFunctionFactory', (): void => {
 			// Assert
 			expect(secretMock).toHaveBeenCalled();
 			expect(secretMock.mock.calls.length).toBe(1);
-			expect(errorMessage).toBe('No data in secret.');
-		});
-
-		it('successfully parses and writes .env', async (): Promise<void> => {
-			let content;
-			const { createLocalEnvironment } = secretsManagerFunctionFactory;
-			const secretMock = jest
-				.fn()
-				.mockReturnValue(
-					Promise.resolve({ SecretString: JSON.stringify({ beep: 'boop' }) }),
-				);
-
-			jest
-				.spyOn(secretManager, 'send')
-				.mockImplementation(() => Promise.resolve(secretMock()));
-			jest
-				.spyOn(fs, 'writeFileSync')
-				.mockImplementation((_fileName, fileContent) => {
-					content = fileContent;
-				});
-
-			// Execute
-			await createLocalEnvironment();
-
-			// Assert
-			expect(secretMock).toHaveBeenCalled();
-			expect(secretMock.mock.calls.length).toBe(1);
-			expect(content).toBe('beep=boop \n');
-		});
+		expect(errorMessage).toBe('Secret has no value');
 	});
+
+	it('successfully parses and writes .env', async (): Promise<void> => {
+		let content;
+		const { createLocalEnvironment } = secretsManagerFunctionFactory;
+		const secretMock = jest
+			.fn()
+			.mockReturnValue(
+				Promise.resolve({ SecretString: JSON.stringify({ beep: 'boop' }) }),
+			);
+
+		jest
+			.spyOn(secretManager, 'send')
+			.mockImplementation(() => Promise.resolve(secretMock()));
+		jest
+			.spyOn(fs, 'writeFileSync')
+			.mockImplementation((_fileName, fileContent) => {
+				content = fileContent;
+			});
+
+		// Execute
+		await createLocalEnvironment();
+
+		// Assert
+		expect(secretMock).toHaveBeenCalled();
+		expect(secretMock.mock.calls.length).toBe(1);
+		expect(content).toContain('# This .env file was generated from AWS Secrets Manager');
+		expect(content).toContain('beep=boop');
+	});
+});
 });
