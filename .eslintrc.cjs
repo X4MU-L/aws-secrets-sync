@@ -16,6 +16,10 @@ module.exports = {
 	},
 	plugins: ['@typescript-eslint', 'prettier'],
 	rules: {
+		// TypeScript specific rules
+		'no-shadow': 'off', // Disable base rule
+		'@typescript-eslint/no-shadow': 'error', // Enable TypeScript version
+		
 		// not sure why we need this if Typescript already enforces it.
 		// If we want to enable these rules, we need use: eslint-import-resolver-typescript
 		'import/no-unresolved': 'off',
@@ -24,4 +28,12 @@ module.exports = {
 		'no-return-assign': 'off',
 		'no-param-reassign': 'off',
 	},
+	overrides: [
+		{
+			files: ['src/logger.ts', 'src/utils.ts'],
+			rules: {
+				'no-console': 'off',
+			},
+		},
+	],
 };

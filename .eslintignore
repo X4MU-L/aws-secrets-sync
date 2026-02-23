@@ -1,2 +1,4 @@
 build.ts
 playground
+*.d.ts
+.dist/

@@ -1,17 +1,18 @@
 {
 	"compilerOptions": {
-		"lib": ["es2023"],
+		"lib": ["es2023", "dom"],
 		"module": "ESNext",
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"target": "es2022",
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"declaration": true,
-		"emitDeclarationOnly": true,
-		"allowImportingTsExtensions": true,
-		"outDir": "./.dist"
+		"emitDeclarationOnly": false,
+		"rootDir": "./src",
+		"outDir": ".dist",
+		"types": ["node", "jest"]
 	},
 	"include": ["src/**/*"],
 	"exclude": ["src/__tests__/**/*.ts"]
