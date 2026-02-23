@@ -67,6 +67,7 @@ export interface CLIFlags {
 	stage?: string;
 	help?: boolean;
 	debug?: boolean;
+	interactive?: boolean;
 	[key: string]: string | boolean | undefined;
 }
 

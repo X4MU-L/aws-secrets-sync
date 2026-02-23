@@ -10,20 +10,23 @@ A powerful CLI tool to manage your environment variables using AWS Secrets Manag
 ## Features
 
 ✨ **Key Features:**
-- 🔐 Secure secret management with AWS Secrets Manager
-- 🚀 Works as a global CLI or npm script
-- 📦 Cross-platform: npm, yarn, pnpm, bun
-- 🌍 Works on Linux, macOS, and Windows
-- 🔄 Intelligent merge strategies for secrets
-- 🎯 CI/CD ready with environment detection
-- 📝 Interactive configuration wizard
-- 🛡️ Type-safe TypeScript implementation
+
+- Secure secret management with AWS Secrets Manager
+- Works as a global CLI or npm script
+- Cross-platform: npm, yarn, pnpm, bun
+- Works on Linux, macOS, and Windows
+- Intelligent merge strategies for secrets
+- Reads from .env in current working directory if available
+- CI/CD ready with environment detection
+- Interactive configuration wizard
+- Type-safe TypeScript implementation
 
 ## Quick Start
 
 ### Installation
 
 **Global installation (recommended for CLI):**
+
 ```bash
 npm install -g aws-secret-sync
 yarn global add aws-secret-sync
@@ -32,6 +35,7 @@ bun add -g aws-secret-sync
 ```
 
 **Local installation (recommended for npm scripts):**
+
 ```bash
 npm install --save-dev aws-secret-sync
 yarn add --dev aws-secret-sync
@@ -58,15 +62,16 @@ Add to your `package.json`:
 
 ```json
 {
-  "scripts": {
-    "secrets:setup": "aws-secret-sync configure",
-    "secrets:push": "aws-secret-sync createOrUpdateSecret --stage dev",
-    "secrets:pull": "aws-secret-sync createLocalEnvironment --stage dev"
-  }
+	"scripts": {
+		"secrets:setup": "aws-secret-sync configure",
+		"secrets:push": "aws-secret-sync createOrUpdateSecret --stage dev",
+		"secrets:pull": "aws-secret-sync createLocalEnvironment --stage dev"
+	}
 }
 ```
 
 Run with:
+
 ```bash
 npm run secrets:push
 npm run secrets:pull
@@ -80,10 +85,10 @@ Create a configuration file with your AWS settings:
 
 ```json
 {
-  "Name": "my-project",
-  "Description": "My awesome project",
-  "Region": "us-east-1",
-  "Profile": "default"
+	"Name": "my-project",
+	"Description": "My awesome project",
+	"Region": "us-east-1",
+	"Profile": "default"
 }
 ```
 
@@ -91,12 +96,12 @@ Or use explicit credentials:
 
 ```json
 {
-  "Name": "my-project",
-  "Description": "My awesome project",
-  "Region": "us-east-1",
-  "AWS_ACCESS_KEY_ID": "AKIA_...",
-  "AWS_SECRET_ACCESS_KEY": "...",
-  "AWS_SESSION_TOKEN": "..." 
+	"Name": "my-project",
+	"Description": "My awesome project",
+	"Region": "us-east-1",
+	"AWS_ACCESS_KEY_ID": "AKIA_...",
+	"AWS_SECRET_ACCESS_KEY": "...",
+	"AWS_SESSION_TOKEN": "..."
 }
 ```
 
@@ -106,12 +111,7 @@ Define which environment variables to sync:
 
 ```json
 {
-  "LIST_OF_SECRETS": [
-    "API_KEY",
-    "DATABASE_URL",
-    "JWT_SECRET",
-    "STRIPE_API_KEY"
-  ]
+	"LIST_OF_SECRETS": ["API_KEY", "DATABASE_URL", "JWT_SECRET", "STRIPE_API_KEY"]
 }
 ```
 
@@ -180,6 +180,7 @@ CI=true npm run secrets:push -- --stage prod
 ⚠️ **IMPORTANT:**
 
 1. **Never commit .env to git**
+
    ```bash
    echo ".env" >> .gitignore
    echo ".aws-config" >> .gitignore
@@ -213,5 +214,3 @@ MIT © [Chukwuebuka Okoli](https://github.com/supersoniko)
 ---
 
 **Built with ❤️ for AWS developers**
-
-
