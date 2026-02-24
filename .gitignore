@@ -93,3 +93,4 @@ typings/
 
 # Mac
 .DS_Store
+.aws-config
