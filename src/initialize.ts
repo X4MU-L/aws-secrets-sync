@@ -87,7 +87,7 @@ export async function requireConfig(
 	const context = await loadConfigContext(projectRoot, ci);
 	const isNpm = isNpmScript();
 
-	if (!isNpm) {
+	if (!isNpm || ci) {
 		logger.debugLog(
 			'Possiblely running outside of npm script. Skipping config existence check.',
 		);

@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import rc from 'rc';
+import dotenv from 'dotenv';
 import { logger, Color } from './logger';
 import type { SecretsRcConfig, CLIFlags, ParsedCLI } from './types';
 
@@ -105,7 +106,10 @@ export function isCiEnvironment(flags?: { ci?: boolean }): boolean {
 	];
 
 	return ciEnvVars.some(
-		(envVar) => process.env[envVar] === 'true' || process.env[envVar] === 'yes',
+		(envVar) =>
+			process.env[envVar] === 'true' ||
+			process.env[envVar] === 'yes' ||
+			process.env[envVar] === '1',
 	);
 }
 
@@ -129,6 +133,20 @@ export async function loadFromEnvFile(
 	const isNpm = isNpmScript();
 	const isCi = isCiEnvironment(flags);
 	if (isCi) {
+		// In CI, try to load a .env file into process.env first.
+		// dotenv won't override vars already set by the CI system (e.g. GitHub Secrets),
+		// so this is safe — it only fills in any gaps.
+		const ciEnvPath = envFilePath ?? path.join(process.cwd(), '.env');
+		const dotenvResult = dotenv.config({ path: ciEnvPath, override: false });
+		if (dotenvResult.error) {
+			logger.debugLog(
+				`No .env file found at ${ciEnvPath}, using CI environment as-is`,
+			);
+		} else {
+			logger.debugLog(
+				`Loaded .env from ${ciEnvPath} into process.env (CI mode)`,
+			);
+		}
 		return getEnvConfig(secretName, isCi);
 	}
 
@@ -189,7 +207,7 @@ export async function loadFromEnvFile(
 		// Show prompt when running interactively (not CI, and either --interactive
 		// flag is set OR not running as an npm script)
 		const shouldPrompt =
-			!isCiEnvironment(flags) && (flags.interactive === true || !isNpm);
+			!isCiEnvironment(flags) && (flags.interactive === true || isNpm);
 
 		let confirmed = true;
 		if (shouldPrompt) {
@@ -211,19 +229,21 @@ export async function loadFromEnvFile(
 			});
 
 			try {
-				const raw = fs.readFileSync(secretsRcPath, 'utf-8');
-				const secretsRc = JSON.parse(raw) as SecretsRcConfig;
-				const updated = Array.from(
-					new Set([...(secretsRc.LIST_OF_SECRETS ?? []), ...newKeys]),
-				);
-				secretsRc.LIST_OF_SECRETS = updated;
-				fs.writeFileSync(
-					secretsRcPath,
-					`${JSON.stringify(secretsRc, null, 2)}\n`,
-				);
-				logger.debugLog(
-					`Updated .secretsrc with new keys: ${newKeys.join(', ')}`,
-				);
+				if (isNpm) {
+					const raw = fs.readFileSync(secretsRcPath, 'utf-8');
+					const secretsRc = JSON.parse(raw) as SecretsRcConfig;
+					const updated = Array.from(
+						new Set([...(secretsRc.LIST_OF_SECRETS ?? []), ...newKeys]),
+					);
+					secretsRc.LIST_OF_SECRETS = updated;
+					fs.writeFileSync(
+						secretsRcPath,
+						`${JSON.stringify(secretsRc, null, 2)}\n`,
+					);
+					logger.debugLog(
+						`Updated .secretsrc with new keys: ${newKeys.join(', ')}`,
+					);
+				}
 			} catch {
 				logger.debugLog('No .secretsrc found, skipping update');
 			}
@@ -251,6 +271,15 @@ export async function checkUnsetSecrets(
 	const config = rc(secretName);
 	const listOfSecrets: string[] = (config.LIST_OF_SECRETS as string[]) || [];
 
+	const ciEnvPath = path.join(process.cwd(), '.env');
+	const dotenvResult = dotenv.config({ path: ciEnvPath, override: false });
+	if (dotenvResult.error) {
+		logger.debugLog(
+			`No .env file found at ${ciEnvPath}, using CI environment as-is`,
+		);
+	} else {
+		logger.debugLog(`Loaded .env from ${ciEnvPath} into process.env (CI mode)`);
+	}
 	const unsetKeys = listOfSecrets.filter((key) => {
 		const value = process.env[key];
 		return !value || value.trim() === '';

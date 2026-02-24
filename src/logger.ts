@@ -81,7 +81,7 @@ class Logger {
 	 * Log debug message in gray (only if debug enabled)
 	 */
 	debugLog(message: string, data?: unknown): void {
-		if (!this.debug || this.silent || !this.verbose) return;
+		if (!this.debug || this.silent) return;
 		if (data) {
 			console.log(
 				`${Color.Gray}[DEBUG] ${message}${Color.Reset}`,
