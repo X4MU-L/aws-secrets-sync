@@ -28,8 +28,12 @@ export async function cli(args: string[]): Promise<void> {
 	const { command, flags } = parsed;
 
 	// CLI mode: always enable verbose so info/log messages are shown
-	if (flags.debug || flags.verbose || flags.ci) {
+	if (flags.verbose || flags.ci) {
 		logger.setVerbose(true);
+	}
+
+	if (flags.debug) {
+		logger.setDebug(true);
 	}
 
 	// Help command
@@ -103,12 +107,17 @@ export async function cli(args: string[]): Promise<void> {
 				}
 
 				// Warn about LIST_OF_SECRETS entries missing from process.env
-				const shouldProceed = await checkUnsetSecrets('secrets', flags);
+				const secretName = 'secrets';
+				const shouldProceed = await checkUnsetSecrets(secretName, flags);
 				if (!shouldProceed) {
 					process.exit(1);
 				}
 
-				const secretString = await loadFromEnvFile(undefined, 'secrets', flags);
+				const secretString = await loadFromEnvFile(
+					undefined,
+					secretName,
+					flags,
+				);
 
 				const config = {
 					Name:
