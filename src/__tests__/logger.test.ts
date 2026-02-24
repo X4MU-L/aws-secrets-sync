@@ -57,6 +57,7 @@ describe('Logger', () => {
 
 	describe('info', () => {
 		it('should log info message with blue color', () => {
+			logger.setVerbose(true);
 			logger.info('Information');
 			expect(consoleSpy).toHaveBeenCalled();
 		});
@@ -71,6 +72,7 @@ describe('Logger', () => {
 
 		it('should log when debug mode is on', () => {
 			logger.setDebug(true);
+			logger.setVerbose(true);
 			logger.debugLog('Debug message');
 			expect(consoleSpy).toHaveBeenCalled();
 			logger.setDebug(false);
@@ -96,6 +98,7 @@ describe('Logger', () => {
 			expect(consoleSpy).not.toHaveBeenCalled();
 
 			logger.setDebug(true);
+			logger.setVerbose(true);
 			logger.debugLog('Now shown');
 			expect(consoleSpy).toHaveBeenCalled();
 			logger.setDebug(false);

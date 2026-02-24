@@ -24,6 +24,12 @@ describe('utils', () => {
 		jest.clearAllMocks();
 	});
 
+	afterAll(() => {
+		// readline.createInterface holds a TTYWRAP reference to process.stdin.
+		// Unreffing it lets Jest exit cleanly without --forceExit.
+		process.stdin.unref();
+	});
+
 	describe('prompt', () => {
 		it('should prompt user and return answer', async () => {
 			mockQuestion.mockImplementation(
