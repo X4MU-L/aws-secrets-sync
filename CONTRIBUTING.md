@@ -105,7 +105,7 @@ chore: bump esbuild to 0.20
 
 ## Reporting Issues
 
-Please open an issue on [GitHub](https://github.com/x4mul-l/aws-secrets-sync/issues) with:
+Please open an issue on [GitHub](https://github.com/x4mu-l/aws-secrets-sync/issues) with:
 
 - A clear description of the bug or feature request
 - Steps to reproduce (for bugs)
